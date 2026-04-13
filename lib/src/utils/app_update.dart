@@ -1,6 +1,5 @@
 import 'package:android_package_installer/android_package_installer.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:runpoint_app_commons/runpoint_app_commons.dart';
@@ -137,8 +136,6 @@ Future<void> appUpdate(
       }
 
       await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
-      await Future<void>.delayed(const Duration(milliseconds: 400));
-      SystemNavigator.pop();
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) return;
       safeSetError('Download failed: ${e.message ?? e.type.name}');
