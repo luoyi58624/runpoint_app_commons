@@ -211,7 +211,11 @@ Future<void> appUpdate(
                       children: [
                         const Text('Downloading...'),
                         const SizedBox(height: 12),
-                        LinearProgressIndicator(value: ratio),
+                        LinearProgressIndicator(
+                          value: ratio,
+                          backgroundColor: Colors.grey.shade300,
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           percentText,
