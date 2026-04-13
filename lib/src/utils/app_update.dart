@@ -21,14 +21,31 @@ Future<void> appUpdate(
   final isDownloading = ValueNotifier<bool>(false);
   final errorText = ValueNotifier<String?>(null);
   CancelToken? cancelToken;
+  var isDisposed = false;
+
+  void safeSetDownloading(bool v) {
+    if (isDisposed) return;
+    isDownloading.value = v;
+  }
+
+  void safeSetError(String? v) {
+    if (isDisposed) return;
+    errorText.value = v;
+  }
+
+  void safeSetProgress(_DownloadProgress v) {
+    if (isDisposed) return;
+    progress.value = v;
+  }
 
   String? validateUrl(String url) {
     final uri = Uri.tryParse(url);
     if (uri == null) return 'Invalid download URL.';
     if (!uri.hasScheme) return 'Invalid download URL (missing scheme).';
     final scheme = uri.scheme.toLowerCase();
-    if (scheme != 'http' && scheme != 'https')
+    if (scheme != 'http' && scheme != 'https') {
       return 'Unsupported URL scheme: $scheme';
+    }
     if (uri.host.isEmpty) return 'Invalid download URL (missing host).';
     return null;
   }
@@ -39,7 +56,6 @@ Future<void> appUpdate(
 
     final dio = ElHttp.instance.dio;
 
-    // Prefer HEAD (cheap). Some servers reject it (405), so we fall back to a 1-byte range GET.
     try {
       final r = await dio.head<dynamic>(
         url,
@@ -95,15 +111,15 @@ Future<void> appUpdate(
 
   Future<void> startDownload(BuildContext dialogContext) async {
     if (isDownloading.value) return;
-    isDownloading.value = true;
-    errorText.value = null;
-    progress.value = _DownloadProgress.initial();
+    safeSetDownloading(true);
+    safeSetError(null);
+    safeSetProgress(_DownloadProgress.initial());
     cancelToken = CancelToken();
 
     try {
       final preflightErr = await preflightDownloadUrl(downloadUrl);
       if (preflightErr != null) {
-        errorText.value = preflightErr;
+        safeSetError(preflightErr);
         return;
       }
 
@@ -112,7 +128,9 @@ Future<void> appUpdate(
         apkPath,
         cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
-          progress.value = _DownloadProgress(received: received, total: total);
+          safeSetProgress(
+            _DownloadProgress(received: received, total: total),
+          );
         },
       );
 
@@ -125,11 +143,11 @@ Future<void> appUpdate(
       SystemNavigator.pop();
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) return;
-      errorText.value = 'Download failed: ${e.message ?? e.type.name}';
+      safeSetError('Download failed: ${e.message ?? e.type.name}');
     } catch (e) {
-      errorText.value = 'Update failed: $e';
+      safeSetError('Update failed: $e');
     } finally {
-      isDownloading.value = false;
+      safeSetDownloading(false);
       cancelToken = null;
     }
   }
@@ -256,6 +274,7 @@ Future<void> appUpdate(
   try {
     await dialogClosed;
   } finally {
+    isDisposed = true;
     progress.dispose();
     isDownloading.dispose();
     errorText.dispose();
