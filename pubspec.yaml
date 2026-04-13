@@ -30,6 +30,10 @@ dependencies:
     git:
       url: https://github.com/luoyi58624/el.git
       path: packages/el_http
+  package_info_plus: ^9.0.0
+  path_provider: ^2.1.5
+  path: ^1.9.1
+  android_package_installer: ^0.0.3
 
 dev_dependencies:
   flutter_test:

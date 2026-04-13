@@ -23,7 +23,7 @@ class ListTileGroupWidget extends StatelessWidget {
 }
 
 class ListViewDemoWidget extends StatelessWidget {
-  const ListViewDemoWidget(this.itemCount, {super.key, this.physics, this.controller, this.onTap});
+  const ListViewDemoWidget({super.key, this.itemCount = 1000, this.controller, this.physics, this.onTap});
 
   final int itemCount;
   final ScrollController? controller;
@@ -32,18 +32,11 @@ class ListViewDemoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElScroll(
+    return ListView.builder(
+      itemCount: itemCount,
       controller: controller,
       physics: physics,
-      children: [
-        ...List.generate(
-          itemCount,
-          (index) => Material(
-            type: MaterialType.transparency,
-            child: ListTile(onTap: onTap, title: Text('列表 - ${index + 1}')),
-          ),
-        ),
-      ],
+      itemBuilder: (context, index) => ListTile(onTap: onTap, title: Text('列表 - ${index + 1}')),
     );
   }
 }

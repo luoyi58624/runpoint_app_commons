@@ -2,7 +2,7 @@ name: example
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.3+4
+version: 1.0.5+5
 
 environment:
   sdk: ^3.11.0
@@ -14,9 +14,6 @@ dependencies:
     path: ..
   cupertino_icons: ^1.0.8
   package_info_plus: ^9.0.0
-  path_provider: ^2.1.5
-  path: ^1.9.1
-  android_package_installer: ^0.0.3
 
 dev_dependencies:
   flutter_test:
