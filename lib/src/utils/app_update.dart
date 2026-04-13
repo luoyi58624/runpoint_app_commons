@@ -128,9 +128,7 @@ Future<void> appUpdate(
         apkPath,
         cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
-          safeSetProgress(
-            _DownloadProgress(received: received, total: total),
-          );
+          safeSetProgress(_DownloadProgress(received: received, total: total));
         },
       );
 
@@ -212,9 +210,11 @@ Future<void> appUpdate(
                         const Text('Downloading...'),
                         const SizedBox(height: 12),
                         LinearProgressIndicator(
-                          value: ratio,
+                          value: ratio ?? 0,
                           backgroundColor: Colors.grey.shade300,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.green,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
