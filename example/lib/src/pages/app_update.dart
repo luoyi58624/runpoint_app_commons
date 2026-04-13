@@ -15,83 +15,124 @@ class AppUpdatePage extends StatelessWidget {
     if (!context.mounted) return;
     final apkPath = p.join(dir.path, 'app_update.apk');
 
-    final cancelToken = CancelToken();
     final progress = ValueNotifier<_DownloadProgress>(_DownloadProgress.initial());
+    final isDownloading = ValueNotifier<bool>(false);
+    final errorText = ValueNotifier<String?>(null);
 
-    final downloadFuture = http.dio.download(
-      '/uploads/app.apk',
-      apkPath,
-      cancelToken: cancelToken,
-      onReceiveProgress: (received, total) {
-        progress.value = _DownloadProgress(received: received, total: total);
-      },
-    );
+    Future<void> startDownload(BuildContext dialogContext) async {
+      if (isDownloading.value) return;
+      isDownloading.value = true;
+      errorText.value = null;
+      progress.value = _DownloadProgress.initial();
+
+      try {
+        await http.dio.download(
+          '/uploads/app.apk',
+          apkPath,
+          onReceiveProgress: (received, total) {
+            progress.value = _DownloadProgress(received: received, total: total);
+          },
+        );
+
+        if (dialogContext.mounted) {
+          Navigator.of(dialogContext, rootNavigator: true).pop();
+        }
+
+        final statusCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
+        if (statusCode != null) {
+          final installationStatus = PackageInstallerStatus.byCode(statusCode);
+          // ignore: avoid_print
+          print(installationStatus.name);
+        }
+      } on DioException catch (e) {
+        errorText.value = '下载失败：${e.message ?? e.type.name}';
+      } catch (e) {
+        errorText.value = '更新失败：$e';
+      } finally {
+        isDownloading.value = false;
+      }
+    }
 
     final dialogClosed = showDialog<void>(
       context: context,
       barrierDismissible: false,
+      useRootNavigator: true,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Downloading'),
-          content: ValueListenableBuilder<_DownloadProgress>(
-            valueListenable: progress,
-            builder: (context, p, _) {
-              final ratio = p.ratio;
-              final percentText = ratio == null ? '...' : '${(ratio * 100).toStringAsFixed(0)}%';
-              final detailText = p.detailText;
-              return SizedBox(
-                width: 320,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    LinearProgressIndicator(value: ratio),
-                    const SizedBox(height: 12),
-                    Text(percentText, style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(detailText, style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                ),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (!cancelToken.isCancelled) cancelToken.cancel('User cancelled');
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: const Text('New Version'),
+            content: SizedBox(
+              width: 320,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: isDownloading,
+                builder: (context, downloading, _) {
+                  if (!downloading) {
+                    return ValueListenableBuilder<String?>(
+                      valueListenable: errorText,
+                      builder: (context, err, _) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('检测到新版本，需要立即更新后才能继续使用。'),
+                            if (err != null) ...[
+                              const SizedBox(height: 12),
+                              Text(err, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                            ],
+                          ],
+                        );
+                      },
+                    );
+                  }
+
+                  return ValueListenableBuilder<_DownloadProgress>(
+                    valueListenable: progress,
+                    builder: (context, p, _) {
+                      final ratio = p.ratio;
+                      final percentText = ratio == null ? '...' : '${(ratio * 100).toStringAsFixed(0)}%';
+                      final detailText = p.detailText;
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('正在下载更新包，请稍候...'),
+                          const SizedBox(height: 12),
+                          LinearProgressIndicator(value: ratio),
+                          const SizedBox(height: 12),
+                          Text(percentText, style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 4),
+                          Text(detailText, style: Theme.of(context).textTheme.bodySmall),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ],
+            actions: [
+              ValueListenableBuilder<bool>(
+                valueListenable: isDownloading,
+                builder: (context, downloading, _) {
+                  if (downloading) return const SizedBox.shrink();
+                  return TextButton(
+                    onPressed: () => startDownload(context),
+                    child: const Text('确认更新'),
+                  );
+                },
+              ),
+            ],
+          ),
         );
       },
     );
 
     try {
-      await downloadFuture;
-      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
       await dialogClosed;
-
-      final statusCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
-      if (statusCode != null) {
-        final installationStatus = PackageInstallerStatus.byCode(statusCode);
-        // ignore: avoid_print
-        print(installationStatus.name);
-      }
-    } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) return;
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: ${e.message ?? e.type.name}')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Update failed: $e')),
-      );
     } finally {
       progress.dispose();
+      isDownloading.dispose();
+      errorText.dispose();
     }
   }
 
@@ -109,27 +150,10 @@ class AppUpdatePage extends StatelessWidget {
               if (!context.mounted) return;
 
               if (El.compareNum(El.safeInt(info.buildNumber), El.safeInt(result['data']), .less)) {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('New Version'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          context.pop();
-                        },
-                        style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
-                        child: Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          context.pop();
-                          await _downloadAndInstallApk(context);
-                        },
-                        child: Text('Update'),
-                      ),
-                    ],
-                  ),
+                await _downloadAndInstallApk(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Already up to date')),
                 );
               }
             },
