@@ -15,6 +15,76 @@ Future<void> appUpdate(BuildContext context, {required String downloadUrl}) asyn
   final isDownloading = ValueNotifier<bool>(false);
   final errorText = ValueNotifier<String?>(null);
 
+  String? validateUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return 'Invalid download URL.';
+    if (!uri.hasScheme) return 'Invalid download URL (missing scheme).';
+    final scheme = uri.scheme.toLowerCase();
+    if (scheme != 'http' && scheme != 'https') return 'Unsupported URL scheme: $scheme';
+    if (uri.host.isEmpty) return 'Invalid download URL (missing host).';
+    return null;
+  }
+
+  Future<String?> preflightDownloadUrl(String url) async {
+    final urlErr = validateUrl(url);
+    if (urlErr != null) return urlErr;
+
+    final dio = ElHttp.instance.dio;
+
+    // Prefer HEAD (cheap). Some servers reject it (405), so we fall back to a 1-byte range GET.
+    try {
+      final r = await dio.head<dynamic>(
+        url,
+        options: Options(
+          followRedirects: true,
+          validateStatus: (s) => s != null && s >= 200 && s < 400,
+          sendTimeout: const Duration(seconds: 8),
+          receiveTimeout: const Duration(seconds: 8),
+        ),
+      );
+
+      final cl = r.headers.value(Headers.contentLengthHeader);
+      final contentLength = cl == null ? null : int.tryParse(cl);
+      if (contentLength != null && contentLength <= 0) {
+        return 'Invalid package size.';
+      }
+
+      return null;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status != 405 && status != 501) {
+        // Not a "method not allowed" style error -> treat as unreachable.
+        return 'Package URL is not reachable (${status ?? e.type.name}).';
+      }
+    } catch (_) {
+      // ignore and fall back
+    }
+
+    try {
+      final r = await dio.get<List<int>>(
+        url,
+        options: Options(
+          responseType: ResponseType.bytes,
+          followRedirects: true,
+          validateStatus: (s) => s != null && s >= 200 && s < 400,
+          headers: const {'Range': 'bytes=0-0'},
+          sendTimeout: const Duration(seconds: 8),
+          receiveTimeout: const Duration(seconds: 8),
+        ),
+      );
+
+      if (r.data == null || r.data!.isEmpty) {
+        return 'Package URL is not reachable.';
+      }
+      return null;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      return 'Package URL is not reachable (${status ?? e.type.name}).';
+    } catch (e) {
+      return 'Package URL is not reachable ($e).';
+    }
+  }
+
   Future<void> startDownload(BuildContext dialogContext) async {
     if (isDownloading.value) return;
     isDownloading.value = true;
@@ -22,6 +92,12 @@ Future<void> appUpdate(BuildContext context, {required String downloadUrl}) asyn
     progress.value = _DownloadProgress.initial();
 
     try {
+      final preflightErr = await preflightDownloadUrl(downloadUrl);
+      if (preflightErr != null) {
+        errorText.value = preflightErr;
+        return;
+      }
+
       await ElHttp.instance.dio.download(
         downloadUrl,
         apkPath,
