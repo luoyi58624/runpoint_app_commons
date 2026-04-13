@@ -45,9 +45,9 @@ class AppUpdatePage extends StatelessWidget {
           print(installationStatus.name);
         }
       } on DioException catch (e) {
-        errorText.value = '下载失败：${e.message ?? e.type.name}';
+        errorText.value = 'Download Fail：${e.message ?? e.type.name}';
       } catch (e) {
-        errorText.value = '更新失败：$e';
+        errorText.value = 'Update Fail：$e';
       } finally {
         isDownloading.value = false;
       }
@@ -75,7 +75,7 @@ class AppUpdatePage extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('检测到新版本，需要立即更新后才能继续使用。'),
+                            const Text('You need to update it immediately in order to continue using it.'),
                             if (err != null) ...[
                               const SizedBox(height: 12),
                               Text(err, style: TextStyle(color: Theme.of(context).colorScheme.error)),
@@ -96,7 +96,7 @@ class AppUpdatePage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('正在下载更新包，请稍候...'),
+                          const Text('Downloading...'),
                           const SizedBox(height: 12),
                           LinearProgressIndicator(value: ratio),
                           const SizedBox(height: 12),
@@ -117,7 +117,7 @@ class AppUpdatePage extends StatelessWidget {
                   if (downloading) return const SizedBox.shrink();
                   return TextButton(
                     onPressed: () => startDownload(context),
-                    child: const Text('确认更新'),
+                    child: const Text('Update'),
                   );
                 },
               ),
@@ -161,9 +161,10 @@ class AppUpdatePage extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: ElevatedButton(onPressed: () {}, child: Text('hello')),
-      ),
+      body: ListViewDemoWidget(1000),
+      // body: Center(
+      //   child: ElevatedButton(onPressed: () {}, child: Text('hello')),
+      // ),
     );
   }
 }
