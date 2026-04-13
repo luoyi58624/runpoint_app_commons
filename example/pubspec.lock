@@ -118,7 +118,7 @@ packages:
     description:
       path: "packages/el_dart"
       ref: HEAD
-      resolved-ref: "751ba78b170124bc4d35058d1c8dca88c447e231"
+      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
       url: "https://github.com/luoyi58624/el.git"
     source: git
     version: "0.0.9"
@@ -127,7 +127,7 @@ packages:
     description:
       path: "packages/el_flutter"
       ref: HEAD
-      resolved-ref: "751ba78b170124bc4d35058d1c8dca88c447e231"
+      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
       url: "https://github.com/luoyi58624/el.git"
     source: git
     version: "0.0.5"
@@ -136,7 +136,7 @@ packages:
     description:
       path: "packages/el_http"
       ref: HEAD
-      resolved-ref: "751ba78b170124bc4d35058d1c8dca88c447e231"
+      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
       url: "https://github.com/luoyi58624/el.git"
     source: git
     version: "0.0.2"
@@ -145,7 +145,7 @@ packages:
     description:
       path: "packages/el_state"
       ref: HEAD
-      resolved-ref: "751ba78b170124bc4d35058d1c8dca88c447e231"
+      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
       url: "https://github.com/luoyi58624/el.git"
     source: git
     version: "0.0.3"
@@ -154,7 +154,7 @@ packages:
     description:
       path: "packages/el_storage"
       ref: HEAD
-      resolved-ref: "751ba78b170124bc4d35058d1c8dca88c447e231"
+      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
       url: "https://github.com/luoyi58624/el.git"
     source: git
     version: "0.0.3"
