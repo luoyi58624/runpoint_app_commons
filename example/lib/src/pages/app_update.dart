@@ -31,7 +31,12 @@ class AppUpdatePage extends StatelessWidget {
         ],
       ),
       body: ListViewDemoWidget(),
-      floatingActionButton: FloatingActionButton(onPressed: () {}, child: Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('哈喽哈喽')));
+        },
+        child: Icon(Icons.add),
+      ),
     );
   }
 }
