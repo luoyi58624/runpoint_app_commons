@@ -114,50 +114,45 @@ packages:
     source: hosted
     version: "2.1.2"
   el_dart:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/el_dart"
-      ref: HEAD
-      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
-      url: "https://github.com/luoyi58624/el.git"
-    source: git
-    version: "0.0.9"
+      name: el_dart
+      sha256: "59647e0ecdf7afc5778163897e6967f878faf187f08e1885824d4dfe468a4f00"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.10"
   el_flutter:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/el_flutter"
-      ref: HEAD
-      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
-      url: "https://github.com/luoyi58624/el.git"
-    source: git
-    version: "0.0.5"
+      name: el_flutter
+      sha256: db6fe7e5dcd21053f934b1252ddf9b6ab54e3a722e321276fd5e9501f7a6fac9
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.6"
   el_http:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/el_http"
-      ref: HEAD
-      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
-      url: "https://github.com/luoyi58624/el.git"
-    source: git
-    version: "0.0.2"
+      name: el_http
+      sha256: "282e0db6508177f227a388b2374a94ce8db360b8d360882ff1e37d6e5dc4642c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
   el_state:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/el_state"
-      ref: HEAD
-      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
-      url: "https://github.com/luoyi58624/el.git"
-    source: git
-    version: "0.0.3"
+      name: el_state
+      sha256: "311013c3dce7fe589e280a45b50598a58bb186e6cd6c3e5a980c952cccd10252"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.5"
   el_storage:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/el_storage"
-      ref: HEAD
-      resolved-ref: "45812fe138dbf80a96661de7d43c552817bc2e14"
-      url: "https://github.com/luoyi58624/el.git"
-    source: git
-    version: "0.0.3"
+      name: el_storage
+      sha256: "783ab12ea8c0ace382cca48029defe3c55a371740d3f1d0cdc7bb1423194e9f4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
   equatable:
     dependency: transitive
     description:

@@ -10,26 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  el_dart:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_dart
-  el_flutter:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_flutter
-  el_state:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_state
-  el_storage:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_storage
-  el_http:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_http
+  el_dart: ^0.0.10
+  el_flutter: ^0.0.6
   package_info_plus: ^9.0.0
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -39,27 +21,5 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-
-dependency_overrides:
-  el_dart:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_dart
-  el_flutter:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_flutter
-  el_state:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_state
-  el_storage:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_storage
-  el_http:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_http
 
 flutter:

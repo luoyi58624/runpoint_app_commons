@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:runpoint_app_commons/runpoint_app_commons.dart';
 
-final http = ElHttp(options: BaseOptions(baseUrl: 'http://192.168.1.67:8087'));
-
 class AppUpdatePage extends StatelessWidget {
   const AppUpdatePage({super.key});
 
@@ -17,10 +15,10 @@ class AppUpdatePage extends StatelessWidget {
           IconButton(
             onPressed: () async {
               final info = await PackageInfo.fromPlatform();
-              final result = await http.get('/version');
+              final result = await ElHttp.instance.get('http://192.168.1.67:8087/version');
               if (!context.mounted) return;
 
-              if (El.compareNum(info.buildNumber, result['data'], .less)) {
+              if (ElDartUtil.compareNum(info.buildNumber, result.data['data'], .less)) {
                 await appUpdate(context, downloadUrl: 'http://192.168.1.67:8087/uploads/app.apk');
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Already up to date')));

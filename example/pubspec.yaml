@@ -20,27 +20,5 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-dependency_overrides:
-  el_dart:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_dart
-  el_flutter:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_flutter
-  el_state:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_state
-  el_storage:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_storage
-  el_http:
-    git:
-      url: https://github.com/luoyi58624/el.git
-      path: packages/el_http
-
 flutter:
   uses-material-design: true
