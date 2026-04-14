@@ -1,0 +1,26 @@
+name: example
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.6+6
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  runpoint_app_commons:
+    path: ..
+  cupertino_icons: ^1.0.8
+  package_info_plus: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  assets:
+    - shorebird.yaml
+  uses-material-design: true
