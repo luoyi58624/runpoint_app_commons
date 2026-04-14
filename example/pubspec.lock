@@ -222,6 +222,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.1"
+  flutter_exit_plugin:
+    dependency: transitive
+    description:
+      name: flutter_exit_plugin
+      sha256: "7c43fa0a11d3f63d0c99dd8c05d0963dd456c9f16c316f7d70f5b22d7bc01bf3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   flutter_hooks:
     dependency: transitive
     description:
@@ -527,6 +535,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  shorebird_code_push:
+    dependency: transitive
+    description:
+      name: shorebird_code_push
+      sha256: "82203f39a66c78548da944dbe4079c2aa2a60fa5bc1105ed707b144c94f04349"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.5"
   sky_engine:
     dependency: transitive
     description: flutter

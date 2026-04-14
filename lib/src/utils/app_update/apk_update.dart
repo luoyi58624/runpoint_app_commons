@@ -5,18 +5,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:runpoint_app_commons/runpoint_app_commons.dart';
 
 /// App 更新
-Future<void> appUpdate(
-  BuildContext context, {
-  required String downloadUrl,
-  bool force = false,
-}) async {
+Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) async {
   final dir = await getTemporaryDirectory();
   if (!context.mounted) return;
   final apkPath = p.join(dir.path, 'app_update.apk');
 
-  final progress = ValueNotifier<_DownloadProgress>(
-    _DownloadProgress.initial(),
-  );
+  final progress = ValueNotifier<_DownloadProgress>(_DownloadProgress.initial());
   final isDownloading = ValueNotifier<bool>(false);
   final errorText = ValueNotifier<String?>(null);
   CancelToken? cancelToken;
@@ -174,17 +168,10 @@ Future<void> appUpdate(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'You need to update it immediately in order to continue using it.',
-                          ),
+                          const Text('You need to update it immediately in order to continue using it.'),
                           if (err != null) ...[
                             const SizedBox(height: 12),
-                            Text(
-                              err,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
+                            Text(err, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                           ],
                         ],
                       );
@@ -196,9 +183,7 @@ Future<void> appUpdate(
                   valueListenable: progress,
                   builder: (context, p, _) {
                     final ratio = p.ratio;
-                    final percentText = ratio == null
-                        ? '...'
-                        : '${(ratio * 100).toStringAsFixed(0)}%';
+                    final percentText = ratio == null ? '...' : '${(ratio * 100).toStringAsFixed(0)}%';
                     final detailText = p.detailText;
                     return Column(
                       mainAxisSize: MainAxisSize.min,
@@ -209,20 +194,12 @@ Future<void> appUpdate(
                         LinearProgressIndicator(
                           value: ratio ?? 0,
                           backgroundColor: Colors.grey.shade300,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.green,
-                          ),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          percentText,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        Text(percentText, style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 4),
-                        Text(
-                          detailText,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
+                        Text(detailText, style: Theme.of(context).textTheme.bodySmall),
                       ],
                     );
                   },
@@ -251,17 +228,11 @@ Future<void> appUpdate(
                   children: [
                     if (!force)
                       TextButton(
-                        onPressed: () =>
-                            Navigator.of(context, rootNavigator: true).pop(),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey,
-                        ),
+                        onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+                        style: TextButton.styleFrom(foregroundColor: Colors.grey),
                         child: const Text('Cancel'),
                       ),
-                    TextButton(
-                      onPressed: () => startDownload(context),
-                      child: const Text('Update'),
-                    ),
+                    TextButton(onPressed: () => startDownload(context), child: const Text('Update')),
                   ],
                 );
               },
@@ -285,8 +256,7 @@ Future<void> appUpdate(
 class _DownloadProgress {
   const _DownloadProgress({required this.received, required this.total});
 
-  factory _DownloadProgress.initial() =>
-      const _DownloadProgress(received: 0, total: -1);
+  factory _DownloadProgress.initial() => const _DownloadProgress(received: 0, total: -1);
 
   final int received;
   final int total;

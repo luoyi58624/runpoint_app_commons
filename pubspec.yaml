@@ -12,7 +12,9 @@ dependencies:
     sdk: flutter
   el_dart: ^0.0.10
   el_flutter: ^0.0.6
+  flutter_exit_plugin: ^0.0.1
   package_info_plus: ^9.0.0
+  shorebird_code_push: ^2.0.5
   path_provider: ^2.1.5
   path: ^1.9.1
   android_package_installer: ^0.0.3
