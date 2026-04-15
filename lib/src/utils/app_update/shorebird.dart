@@ -15,6 +15,7 @@ Future<void> $checkShorebirdUpdate(
   String downloadedContent,
   String restartNowText,
   String laterText,
+  bool showHint,
 ) async {
   if (_updating) return;
   if (!_updater.isAvailable) return;
@@ -27,6 +28,7 @@ Future<void> $checkShorebirdUpdate(
     await _updater.update(track: track);
 
     if (!context.mounted) return;
+    if (!showHint) return;
 
     await showDialog<void>(
       context: context,
