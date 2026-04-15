@@ -17,7 +17,7 @@ class AppUpdateUtil {
     UpdateTrack track = UpdateTrack.stable,
     String downloadedTitle = 'Update Finish',
     String downloadedContent = 'The patch has been downloaded. Do you want to restart?',
-    String restartNowText = 'Restart Now',
+    String restartNowText = 'Restart',
     String laterText = 'Later',
     bool showHint = true,
   }) async =>

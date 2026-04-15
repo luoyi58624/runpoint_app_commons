@@ -10,15 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   el.init();
   nextTick(() {
-    showDialog<void>(
-      context: el.context,
-      barrierDismissible: true,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Dialog Test'),
-        content: const Text('如果你能看到这个弹窗，说明当前 context 可用。'),
-        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK'))],
-      ),
-    );
+    AppUpdateUtil.shorebirdUpdate(el.context);
   });
   runApp(const MyApp());
 }
