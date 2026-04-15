@@ -8,7 +8,7 @@ import 'package:shorebird_code_push/shorebird_code_push.dart';
 final ShorebirdUpdater _updater = ShorebirdUpdater();
 bool _updating = false;
 
-Future<void> $checkShorebirdUpdate(
+Future<void> $shorebirdUpdate(
   BuildContext context,
   UpdateTrack track,
   String downloadedTitle,

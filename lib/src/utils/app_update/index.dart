@@ -21,5 +21,5 @@ class AppUpdateUtil {
     String laterText = 'Later',
     bool showHint = true,
   }) async =>
-      $checkShorebirdUpdate(context, track, downloadedTitle, downloadedContent, restartNowText, laterText, showHint);
+      $shorebirdUpdate(context, track, downloadedTitle, downloadedContent, restartNowText, laterText, showHint);
 }
