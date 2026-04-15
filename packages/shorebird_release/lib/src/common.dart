@@ -207,6 +207,7 @@ String formatCliCommand(String exe, List<String> args) =>
 
 bool looksLikeFailureText(String text) {
   return <String>[
+    'Unauthorized.'
     'Could not find app with id:',
     'This app may not exist or you may not have permission to view it.',
     'Release not found:',
