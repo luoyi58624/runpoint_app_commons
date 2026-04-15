@@ -1,0 +1,9 @@
+name: shorebird_release
+description: Shorebird release/patch helper scripts for this repo.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+
