@@ -207,6 +207,8 @@ String formatCliCommand(String exe, List<String> args) =>
 
 bool looksLikeFailureText(String text) {
   return <String>[
+    'Could not find app with id:',
+    'This app may not exist or you may not have permission to view it.',
     'Release not found:',
     'Patches can only be published for existing releases.',
     'UnpatchableChangeException',
