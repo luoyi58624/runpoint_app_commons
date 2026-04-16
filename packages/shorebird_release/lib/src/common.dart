@@ -34,7 +34,9 @@ String? _shorebirdExecutable;
     if (a == '--patch-version') {
       final next = (i + 1) < args.length ? args[i + 1] : null;
       if (next == null || next.trim().isEmpty) {
-        stderr.writeln('用法: --patch-version <x.y.z>，例如 --patch-version 1.0.2');
+        stderr.writeln(
+          '用法: --patch-version <x.y.z[+code]>，例如 --patch-version 1.0.2 或 --patch-version 1.0.1+1001',
+        );
         exit(1);
       }
       value = next.trim();
@@ -50,8 +52,41 @@ String? _shorebirdExecutable;
 
   final out = value?.trim();
   if (out == null || out.isEmpty) return (patchVersion: null, restArgs: rest);
-  parseSemver3(out); // validate x.y.z
+  // 支持两种：
+  // 1) x.y.z（只覆盖 version-name，build-number 仍取 version.json）
+  // 2) x.y.z+code（直接作为 shorebird --release-version 使用）
+  final plus = out.indexOf('+');
+  if (plus < 0) {
+    parseSemver3(out);
+    return (patchVersion: out, restArgs: rest);
+  }
+  final name = out.substring(0, plus).trim();
+  final codeRaw = out.substring(plus + 1).trim();
+  parseSemver3(name);
+  final code = int.tryParse(codeRaw);
+  if (code == null || code < 0) {
+    stderr.writeln('patch-version 的 +code 必须为非负整数，当前为: "$out"');
+    exit(1);
+  }
   return (patchVersion: out, restArgs: rest);
+}
+
+({String name, int code}) parseReleaseVersion(String releaseVersion) {
+  final raw = releaseVersion.trim();
+  final idx = raw.indexOf('+');
+  if (idx <= 0 || idx == raw.length - 1) {
+    stderr.writeln('release-version 必须是 x.y.z+code，例如 1.0.1+1001；当前为: "$releaseVersion"');
+    exit(1);
+  }
+  final name = raw.substring(0, idx).trim();
+  final codeRaw = raw.substring(idx + 1).trim();
+  parseSemver3(name);
+  final code = int.tryParse(codeRaw);
+  if (code == null || code < 0) {
+    stderr.writeln('release-version 的 code 必须为非负整数，当前为: "$releaseVersion"');
+    exit(1);
+  }
+  return (name: name, code: code);
 }
 
 Map<String, dynamic> readJsonFile(File file) {
