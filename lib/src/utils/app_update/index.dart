@@ -16,7 +16,7 @@ class AppUpdateUtil {
     BuildContext context, {
     UpdateTrack track = UpdateTrack.stable,
     String downloadedTitle = 'Update Finish',
-    String downloadedContent = 'The patch has been downloaded. Do you want to restart?',
+    String downloadedContent = 'The app has installed a minor update. Do you want to restart?',
     String restartNowText = 'Restart',
     String laterText = 'Later',
     bool showHint = true,

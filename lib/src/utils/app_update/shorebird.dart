@@ -24,41 +24,40 @@ Future<void> $shorebirdUpdate(
 
   _updating = true;
   try {
-    el.message.show('检查热更新');
-    final status = await _updater.checkForUpdate(track: track);
-    if (status != UpdateStatus.outdated) return;
+    UpdateStatus status = await _updater.checkForUpdate(track: track);
 
-    el.message.primary('开始热更新');
-    await _updater.update(track: track);
+    // 若存在更新，则发起更新请求
+    bool updateSuccess = false;
+    if (status == UpdateStatus.outdated) {
+      await _updater.update(track: track);
+      updateSuccess = true;
+    }
 
-    el.message.success('update success');
-    el.message.show('context: ${context.mounted}');
+    // 如果更新成功、或者更新是待重启，则显示弹窗提示用户重启
+    if (updateSuccess || status == UpdateStatus.restartRequired) {
+      if (!context.mounted) return;
+      if (!showHint) return;
 
-    if (!context.mounted) return;
-
-    el.message.show('showHint: $showHint');
-    if (!showHint) return;
-
-    el.message.show('显示弹窗');
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(downloadedTitle),
-          content: Text(downloadedContent),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(laterText)),
-            FilledButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await FlutterExitPlugin.restartApp();
-              },
-              child: Text(restartNowText),
-            ),
-          ],
-        );
-      },
-    );
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(downloadedTitle),
+            content: Text(downloadedContent),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(laterText)),
+              FilledButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await FlutterExitPlugin.restartApp();
+                },
+                child: Text(restartNowText),
+              ),
+            ],
+          );
+        },
+      );
+    }
   } catch (e) {
     ElLog.w((e));
   } finally {
