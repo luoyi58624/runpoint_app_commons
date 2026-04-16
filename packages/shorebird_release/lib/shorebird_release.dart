@@ -19,6 +19,9 @@ import 'src/release.dart' as impl_release;
 /// * dart run ./scripts/release.dart --action=release --flavor=sit
 /// * dart run ./scripts/release.dart --action=patch --flavor=prod
 /// * dart run ./scripts/release.dart --action=release --flavor=prod
+///
+/// 提示：若要对之前发布的版本打补丁，可以使用 --patch-version 参数：
+/// * dart run ./scripts/release.dart --action=patch --flavor=sit --patch-version 1.0.2
 Future<void> runShorebirdRelease(List<String> args) async {
   String? action;
   final rest = <String>[];

@@ -8,6 +8,9 @@ Future<void> run(List<String> args) async {
   final parsed = parseFlavorArgs(args);
   final flavor = parsed.flavor;
   args = parsed.restArgs;
+  final parsedPatchVersion = parsePatchVersionArgs(args);
+  final patchVersion = parsedPatchVersion.patchVersion;
+  args = parsedPatchVersion.restArgs;
   final c = ctx();
 
   final root = readJsonFile(c.versionJson);
@@ -17,10 +20,14 @@ Future<void> run(List<String> args) async {
     exit(1);
   }
   final cfg = FlavorModel.fromJson(Map<String, dynamic>.from(raw));
-  final name = cfg.versionName.trim();
+  final currentName = cfg.versionName.trim();
+  final name = (patchVersion ?? currentName).trim();
   if (name.isEmpty) {
     stderr.writeln('version.json 中 version-name 不能为空');
     exit(1);
+  }
+  if (patchVersion != null && patchVersion != currentName) {
+    stdout.writeln('patch-version: $currentName -> $patchVersion');
   }
   final build = cfg.buildNumber;
   final channels = cfg.channelVersionIds();
@@ -140,7 +147,9 @@ Future<void> run(List<String> args) async {
   tempRoot2[flavor] = tempSec2;
   writeJsonFile(c.versionTempJson, tempRoot2);
 
-  stdout.writeln('patch 完成：flavor=$flavor（对应 build-number=$build），version-name 不变');
+  stdout.writeln(
+    'patch 完成：flavor=$flavor（对应 build-number=$build），本次使用 version-name=$name（不写回 version.json）',
+  );
   summary.print(
     flavor: flavor,
     action: 'patch',

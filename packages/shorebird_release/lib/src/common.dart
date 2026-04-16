@@ -25,6 +25,35 @@ String? _shorebirdExecutable;
   return (flavor: out, restArgs: rest);
 }
 
+({String? patchVersion, List<String> restArgs}) parsePatchVersionArgs(List<String> args) {
+  String? value;
+  final rest = <String>[];
+
+  for (var i = 0; i < args.length; i++) {
+    final a = args[i];
+    if (a == '--patch-version') {
+      final next = (i + 1) < args.length ? args[i + 1] : null;
+      if (next == null || next.trim().isEmpty) {
+        stderr.writeln('用法: --patch-version <x.y.z>，例如 --patch-version 1.0.2');
+        exit(1);
+      }
+      value = next.trim();
+      i++; // consume next
+      continue;
+    }
+    if (a.startsWith('--patch-version=')) {
+      value = a.substring('--patch-version='.length).trim();
+      continue;
+    }
+    rest.add(a);
+  }
+
+  final out = value?.trim();
+  if (out == null || out.isEmpty) return (patchVersion: null, restArgs: rest);
+  parseSemver3(out); // validate x.y.z
+  return (patchVersion: out, restArgs: rest);
+}
+
 Map<String, dynamic> readJsonFile(File file) {
   if (!file.existsSync()) return <String, dynamic>{};
   final text = file.readAsStringSync(encoding: utf8).trim();

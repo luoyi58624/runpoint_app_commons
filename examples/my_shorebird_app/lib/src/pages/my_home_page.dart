@@ -69,6 +69,12 @@ class MyHomePage extends HookWidget {
             ),
             ElevatedButton(
               onPressed: () {
+                FlutterExitPlugin.exitApp();
+              },
+              child: Text('退出'),
+            ),
+            ElevatedButton(
+              onPressed: () {
                 FlutterExitPlugin.restartApp();
               },
               child: Text('重启'),
