@@ -78,9 +78,6 @@ Future<void> $shorebirdUpdate(
 
     if (manualPatch) {
       final status = await _updater.checkForUpdate(track: track);
-
-      el.message.primary(status.name);
-
       var updateSuccess = false;
       if (status == UpdateStatus.outdated) {
         await _updater.update(track: track);
@@ -93,20 +90,22 @@ Future<void> $shorebirdUpdate(
         showPromat();
       }
     } else {
-      for (var i = 0; i < 3; i++) {
+      const pollCount = 5;
+      const pollInterval = Duration(seconds: 2);
+      for (var i = 0; i < pollCount; i++) {
         if (!context.mounted) return;
         final status = await _updater.checkForUpdate(track: track);
-
-        el.message.primary(status.name);
-
         if (status == UpdateStatus.restartRequired) {
           if (!context.mounted) return;
           if (!showHint) return;
           showPromat();
           return;
         }
-        if (i < 2) {
-          await Future<void>.delayed(const Duration(seconds: 5));
+        if (status != UpdateStatus.upToDate) {
+          return;
+        }
+        if (i < pollCount - 1) {
+          await Future<void>.delayed(pollInterval);
         }
       }
     }
