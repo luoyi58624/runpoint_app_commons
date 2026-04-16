@@ -25,19 +25,20 @@ String? _shorebirdExecutable;
   return (flavor: out, restArgs: rest);
 }
 
-({String? versionName, int? buildNumber, List<String> restArgs}) parsePatchVersionArgs(
-  List<String> args,
-) {
+({String? versionName, int? buildNumber, List<String> restArgs})
+    parseTargetVersionArgs(List<String> args) {
   String? value;
+  var usedDeprecatedPatchVersion = false;
   final rest = <String>[];
 
   for (var i = 0; i < args.length; i++) {
     final a = args[i];
-    if (a == '--patch-version') {
+    if (a == '--target-version' || a == '--patch-version') {
+      if (a == '--patch-version') usedDeprecatedPatchVersion = true;
       final next = (i + 1) < args.length ? args[i + 1] : null;
       if (next == null || next.trim().isEmpty) {
         stderr.writeln(
-          '用法: --patch-version <x.y.z[+xx]>，例如 --patch-version 1.0.2 或 --patch-version 1.0.1+1001',
+          '用法: --target-version <x.y.z+xx>，例如 --target-version 1.0.2+9 或 --target-version 1.0.1+1001',
         );
         exit(1);
       }
@@ -45,37 +46,52 @@ String? _shorebirdExecutable;
       i++; // consume next
       continue;
     }
+    if (a.startsWith('--target-version=')) {
+      value = a.substring('--target-version='.length).trim();
+      continue;
+    }
     if (a.startsWith('--patch-version=')) {
+      usedDeprecatedPatchVersion = true;
       value = a.substring('--patch-version='.length).trim();
       continue;
     }
     rest.add(a);
   }
 
+  if (usedDeprecatedPatchVersion) {
+    stderr.writeln('提示：参数 --patch-version 已废弃，请改用 --target-version');
+  }
+
   final out = value?.trim();
   if (out == null || out.isEmpty) {
     return (versionName: null, buildNumber: null, restArgs: rest);
   }
-  // 支持两种：
-  // 1) x.y.z（只覆盖 version-name，build-number 仍取 version.json）
-  // 2) x.y.z+xx
-  //    - 若 xx <= version.json 的 build-number：视为 build-number 覆盖值，最终每个渠道按 version-id+xx 计算 release-version
-  //    - 若 xx > version.json 的 build-number：视为“绝对 release code”，将发布单个补丁，release-version=x.y.z+xx
+  // 必须为：x.y.z+xx
+  // - 若 xx <= version.json 的 build-number：视为 build-number 覆盖值，最终每个渠道按 version-id+xx 计算 release-version
+  // - 若 xx > version.json 的 build-number：视为“绝对 release code”，将只执行一次发布，release-version=x.y.z+xx
   final plus = out.indexOf('+');
   if (plus < 0) {
-    parseSemver3(out);
-    return (versionName: out, buildNumber: null, restArgs: rest);
+    stderr.writeln(
+      'target-version 必须是 x.y.z+xx，例如 --target-version 1.0.2+9；当前为: "$out"',
+    );
+    exit(1);
   }
   final name = out.substring(0, plus).trim();
   final buildRaw = out.substring(plus + 1).trim();
   parseSemver3(name);
   final build = int.tryParse(buildRaw);
   if (build == null || build < 0) {
-    stderr.writeln('patch-version 的 +build-number 必须为非负整数，当前为: "$out"');
+    stderr.writeln('target-version 的 +build-number 必须为非负整数，当前为: "$out"');
     exit(1);
   }
   return (versionName: name, buildNumber: build, restArgs: rest);
 }
+
+@Deprecated('Use parseTargetVersionArgs')
+({String? versionName, int? buildNumber, List<String> restArgs}) parsePatchVersionArgs(
+  List<String> args,
+) =>
+    parseTargetVersionArgs(args);
 
 ({String name, int code}) parseReleaseVersion(String releaseVersion) {
   final raw = releaseVersion.trim();

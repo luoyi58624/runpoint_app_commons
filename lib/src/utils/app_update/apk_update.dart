@@ -139,8 +139,21 @@ Future<bool> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
         },
       );
 
-      await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
-      safeComplete(true);
+      final installCode = await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
+      final installStatus = installCode == null
+          ? PackageInstallerStatus.unknown
+          : PackageInstallerStatus.byCode(installCode);
+
+      if (installStatus == PackageInstallerStatus.success) {
+        safeComplete(true);
+        if (dialogContext.mounted) {
+          Navigator.of(dialogContext, rootNavigator: true).pop();
+        }
+        return;
+      }
+
+      safeSetError('Install failed: ${installStatus.name} (${installCode ?? 'null'})');
+      safeComplete(false);
       if (dialogContext.mounted) {
         Navigator.of(dialogContext, rootNavigator: true).pop();
       }

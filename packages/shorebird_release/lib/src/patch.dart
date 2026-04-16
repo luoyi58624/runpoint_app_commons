@@ -8,10 +8,10 @@ Future<void> run(List<String> args) async {
   final parsed = parseFlavorArgs(args);
   final flavor = parsed.flavor;
   args = parsed.restArgs;
-  final parsedPatchVersion = parsePatchVersionArgs(args);
-  final overrideName = parsedPatchVersion.versionName;
-  final overrideBuild = parsedPatchVersion.buildNumber;
-  args = parsedPatchVersion.restArgs;
+  final parsedTargetVersion = parseTargetVersionArgs(args);
+  final overrideName = parsedTargetVersion.versionName;
+  final overrideBuild = parsedTargetVersion.buildNumber;
+  args = parsedTargetVersion.restArgs;
   final c = ctx();
 
   final root = readJsonFile(c.versionJson);
@@ -29,7 +29,7 @@ Future<void> run(List<String> args) async {
   }
   final cfgBuild = cfg.buildNumber;
   // 规则：
-  // - 若传了 --patch-version x.y.z+xx 且 xx > version.json 的 build-number，则认为 xx 是“绝对 release code”，只发布 1 个补丁：x.y.z+xx
+  // - 若传了 --target-version x.y.z+xx 且 xx > version.json 的 build-number，则认为 xx 是“绝对 release code”，只发布 1 个补丁：x.y.z+xx
   // - 否则认为 xx 是 build-number（可覆盖当前 build-number），按每个渠道 version-id+xx 计算 release-version
   final isSinglePatch = overrideBuild != null && overrideBuild > cfgBuild;
   final build = isSinglePatch ? overrideBuild : (overrideBuild ?? cfgBuild);
