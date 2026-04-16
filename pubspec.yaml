@@ -7,9 +7,6 @@ environment:
   sdk: ^3.10.0
   flutter: ">=3.38.0"
 
-workspace:
-  - packages/shorebird_release
-
 dependencies:
   flutter:
     sdk: flutter
@@ -19,10 +16,6 @@ dependencies:
     git:
       url: https://github.com/luoyi58624/el
       path: packages/el_ui
-  shorebird_release:
-    git:
-      url: https://github.com/luoyi58624/runpoint_app_commons.git
-      path: packages/shorebird_release
   flutter_exit_plugin: ^0.0.1
   package_info_plus: ^9.0.0
   shorebird_code_push: ^2.0.5
