@@ -19,6 +19,28 @@ Future<void> $shorebirdUpdate(
   String laterText,
   bool showHint,
 ) async {
+  void showPromat() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(downloadedTitle),
+          content: Text(downloadedContent),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(laterText)),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await FlutterExitPlugin.restartApp();
+              },
+              child: Text(restartNowText),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   if (_updating) return;
   if (!_updater.isAvailable) return;
 
@@ -40,25 +62,7 @@ Future<void> $shorebirdUpdate(
       if (!context.mounted) return;
       if (!showHint) return;
 
-      await showDialog<void>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text(downloadedTitle),
-            content: Text(downloadedContent),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(laterText)),
-              FilledButton(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await FlutterExitPlugin.restartApp();
-                },
-                child: Text(restartNowText),
-              ),
-            ],
-          );
-        },
-      );
+      showPromat();
     }
   } catch (e) {
     ElLog.w((e));
