@@ -1,0 +1,69 @@
+name: my_shorebird_app
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  runpoint_app_commons:
+    path: ../../
+  shorebird_release:
+    path: ../../packages/shorebird_release
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_flavorizr: ^2.4.2
+
+flutter:
+  assets:
+    - assets/config/channel.json
+    - shorebird.yaml
+  uses-material-design: true
+
+flavorizr:
+  instructions:
+    - assets:download
+    - assets:extract
+    - android:androidManifest
+    - android:flavorizrGradle
+    - android:buildGradle
+    - android:dummyAssets
+    - android:icons
+    - flutter:flavors
+    - flutter:pages
+    - assets:clean
+    - ide:config
+
+  app:
+    android:
+      flavorDimensions: "env"
+    ios:
+      targets:
+        Runner:
+          bundleId: "com.example.my_shorebird_app"
+
+  flavors:
+    sit:
+      app:
+        name: "MyShorebirdApp SIT"
+      android:
+        applicationId: "com.example.my_shorebird_app.sit"
+      ios:
+        bundleId: "com.example.my_shorebird_app.sit"
+
+    prod:
+      app:
+        name: "MyShorebirdApp"
+        icon: "assets/splash/app_icon.png"
+      android:
+        applicationId: "com.example.my_shorebird_app"
+      ios:
+        bundleId: "com.example.my_shorebird_app"

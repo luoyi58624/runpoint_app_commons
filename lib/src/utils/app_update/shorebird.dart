@@ -26,6 +26,8 @@ Future<void> $shorebirdUpdate(
   try {
     UpdateStatus status = await _updater.checkForUpdate(track: track);
 
+    el.message.primary(status.name);
+
     // 若存在更新，则发起更新请求
     bool updateSuccess = false;
     if (status == UpdateStatus.outdated) {
