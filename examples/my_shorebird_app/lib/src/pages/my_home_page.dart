@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_shorebird_app/src/pages/list_page.dart';
+import 'package:runpoint_app_commons/runpoint_app_commons.dart';
 
 import '../../flavors.dart';
 
@@ -18,6 +19,12 @@ class MyHomePage extends StatelessWidget {
           mainAxisSize: .min,
           children: [
             Text('Hello ${F.title}'),
+            ElevatedButton(
+              onPressed: () {
+                FlutterExitPlugin.restartApp();
+              },
+              child: Text('重启'),
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => ListPage()));
