@@ -1,13 +1,15 @@
+import 'dart:async';
+
 import 'package:android_package_installer/android_package_installer.dart';
+import 'package:el_flutter/ext.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:runpoint_app_commons/runpoint_app_commons.dart';
 
 /// App 更新
-Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) async {
+Future<bool> $apkUpdate(BuildContext context, String downloadUrl, bool force) async {
   final dir = await getTemporaryDirectory();
-  if (!context.mounted) return;
+  if (!context.mounted) return false;
   final apkPath = p.join(dir.path, 'app_update.apk');
 
   final progress = ValueNotifier<_DownloadProgress>(_DownloadProgress.initial());
@@ -15,6 +17,12 @@ Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
   final errorText = ValueNotifier<String?>(null);
   CancelToken? cancelToken;
   var isDisposed = false;
+  final resultCompleter = Completer<bool>();
+
+  void safeComplete(bool v) {
+    if (resultCompleter.isCompleted) return;
+    resultCompleter.complete(v);
+  }
 
   void safeSetDownloading(bool v) {
     if (isDisposed) return;
@@ -113,6 +121,12 @@ Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
       final preflightErr = await preflightDownloadUrl(downloadUrl);
       if (preflightErr != null) {
         safeSetError(preflightErr);
+        if (force) {
+          safeComplete(false);
+          if (dialogContext.mounted) {
+            Navigator.of(dialogContext, rootNavigator: true).pop();
+          }
+        }
         return;
       }
 
@@ -125,16 +139,31 @@ Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
         },
       );
 
+      await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
+      safeComplete(true);
       if (dialogContext.mounted) {
         Navigator.of(dialogContext, rootNavigator: true).pop();
       }
-
-      await AndroidPackageInstaller.installApk(apkFilePath: apkPath);
     } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) return;
+      if (CancelToken.isCancel(e)) {
+        safeComplete(false);
+        return;
+      }
       safeSetError('Download failed: ${e.message ?? e.type.name}');
+      if (force) {
+        safeComplete(false);
+        if (dialogContext.mounted) {
+          Navigator.of(dialogContext, rootNavigator: true).pop();
+        }
+      }
     } catch (e) {
       safeSetError('Update failed: $e');
+      if (force) {
+        safeComplete(false);
+        if (dialogContext.mounted) {
+          Navigator.of(dialogContext, rootNavigator: true).pop();
+        }
+      }
     } finally {
       safeSetDownloading(false);
       cancelToken = null;
@@ -151,6 +180,9 @@ Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
         onPopInvokedWithResult: (didPop, result) {
           if (didPop && !force && isDownloading.value) {
             cancelToken?.cancel('User cancelled');
+          }
+          if (didPop && !force) {
+            safeComplete(false);
           }
         },
         child: AlertDialog(
@@ -216,6 +248,7 @@ Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
                   return TextButton(
                     onPressed: () {
                       cancelToken?.cancel('User cancelled');
+                      safeComplete(false);
                       Navigator.of(context, rootNavigator: true).pop();
                     },
                     style: TextButton.styleFrom(foregroundColor: Colors.grey),
@@ -228,7 +261,10 @@ Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
                   children: [
                     if (!force)
                       TextButton(
-                        onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+                        onPressed: () {
+                          safeComplete(false);
+                          Navigator.of(context, rootNavigator: true).pop();
+                        },
                         style: TextButton.styleFrom(foregroundColor: Colors.grey),
                         child: const Text('Cancel'),
                       ),
@@ -246,11 +282,14 @@ Future<void> $apkUpdate(BuildContext context, String downloadUrl, bool force) as
   try {
     await dialogClosed;
   } finally {
+    safeComplete(false);
     isDisposed = true;
     progress.dispose();
     isDownloading.dispose();
     errorText.dispose();
   }
+
+  return resultCompleter.future;
 }
 
 class _DownloadProgress {

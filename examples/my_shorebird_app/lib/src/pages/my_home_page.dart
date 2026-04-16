@@ -69,18 +69,6 @@ class MyHomePage extends HookWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                FlutterExitPlugin.exitApp();
-              },
-              child: Text('退出'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                FlutterExitPlugin.restartApp();
-              },
-              child: Text('重启'),
-            ),
-            ElevatedButton(
-              onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (context) => ListPage()));
               },
               child: Text('列表'),
