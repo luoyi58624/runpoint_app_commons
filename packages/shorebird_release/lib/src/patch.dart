@@ -8,6 +8,9 @@ Future<void> run(List<String> args) async {
   final parsed = parseFlavorArgs(args);
   final flavor = parsed.flavor;
   args = parsed.restArgs;
+  final parsedPatchVersion = parsePatchVersionArgs(args);
+  final patchVersion = parsedPatchVersion.patchVersion;
+  args = parsedPatchVersion.restArgs;
   final c = ctx();
 
   final root = readJsonFile(c.versionJson);
@@ -17,10 +20,18 @@ Future<void> run(List<String> args) async {
     exit(1);
   }
   final cfg = FlavorModel.fromJson(Map<String, dynamic>.from(raw));
-  final name = cfg.versionName.trim();
+  final currentName = cfg.versionName.trim();
+  final overrideReleaseVersion =
+      (patchVersion != null && patchVersion.contains('+')) ? patchVersion.trim() : null;
+  final overrideName =
+      overrideReleaseVersion != null ? parseReleaseVersion(overrideReleaseVersion).name : null;
+  final name = (overrideName ?? patchVersion ?? currentName).trim();
   if (name.isEmpty) {
     stderr.writeln('version.json 中 version-name 不能为空');
     exit(1);
+  }
+  if (patchVersion != null && patchVersion != currentName) {
+    stdout.writeln('patch-version: $currentName -> $patchVersion');
   }
   final build = cfg.buildNumber;
   final channels = cfg.channelVersionIds();
@@ -28,26 +39,35 @@ Future<void> run(List<String> args) async {
     stderr.writeln('version.json 中 channels 不能为空（至少一个渠道）');
     exit(1);
   }
+  if (overrideReleaseVersion != null && channels.length != 1) {
+    stderr.writeln(
+      '当使用完整 patch-version（x.y.z+code）时，channels 必须只有 1 个渠道（否则不同渠道的 release-version code 不同，会产生歧义）。',
+    );
+    stderr.writeln('当前 channels=${channels.keys.toList()..sort()}');
+    exit(1);
+  }
   final isDryRun = args.contains('--dry-run') || args.contains('-n');
 
   final summary = Summary();
 
   final progressKey = 'patch-progress';
-  final expectedProgressId = '$name+$build';
+  final expectedProgressId = overrideReleaseVersion ?? '$name+$build';
   final tempRoot = readJsonFile(c.versionTempJson);
   final tempSec = getOrCreateFlavorSection(tempRoot, flavor);
-  final progress = (tempSec[progressKey] is Map) ? (tempSec[progressKey] as Map) : null;
+  final progress = (tempSec[progressKey] is Map)
+      ? (tempSec[progressKey] as Map)
+      : null;
   final progressId = progress?['id']?.toString() ?? '';
   final completed = <String>{
-    if (progressId == expectedProgressId && progress?['completed-channels'] is List)
+    if (progressId == expectedProgressId &&
+        progress?['completed-channels'] is List)
       ...(progress!['completed-channels'] as List).map((e) => e.toString()),
   };
 
   for (final entry in channels.entries) {
     final ch = entry.key;
     final base = entry.value;
-    final code = base + build;
-    final releaseVersion = '$name+$code';
+    final releaseVersion = overrideReleaseVersion ?? '$name+${base + build}';
 
     if (!isDryRun && completed.contains(ch)) {
       stdout.writeln('已完成，跳过: channel=$ch release-version=$releaseVersion');
@@ -55,7 +75,9 @@ Future<void> run(List<String> args) async {
       continue;
     }
 
-    stdout.writeln('---- patch channel=$ch release-version=$releaseVersion ----');
+    stdout.writeln(
+      '---- patch channel=$ch release-version=$releaseVersion ----',
+    );
     final patchArgs = <String>[
       'patch',
       'android',
@@ -85,14 +107,19 @@ Future<void> run(List<String> args) async {
         stderr.writeln('检测到 Shorebird 服务端验证失败：存在 asset 变更，patch 无法发布。');
         stderr.writeln('这类变更无法通过 patch 下发，需要先创建新的 release。');
         stderr.writeln('');
-        stderr.writeln('请先执行：dart run ./scripts/run.dart --action=release --flavor=$flavor');
-        stderr.writeln('然后再执行：dart run ./scripts/run.dart --action=patch --flavor=$flavor');
+        stderr.writeln(
+          '请先执行：dart run ./scripts/run.dart --action=release --flavor=$flavor',
+        );
+        stderr.writeln(
+          '然后再执行：dart run ./scripts/run.dart --action=patch --flavor=$flavor',
+        );
         stderr.writeln('');
       }
 
       summary.failed++;
-      summary.failedDetails
-          .add('渠道=$ch | release-version=$releaseVersion | exit=$codeExit');
+      summary.failedDetails.add(
+        '渠道=$ch | release-version=$releaseVersion | exit=$codeExit',
+      );
       stderr.writeln(
         'shorebird patch 失败: channel=$ch release-version=$releaseVersion exit=$codeExit',
       );
@@ -140,7 +167,9 @@ Future<void> run(List<String> args) async {
   tempRoot2[flavor] = tempSec2;
   writeJsonFile(c.versionTempJson, tempRoot2);
 
-  stdout.writeln('patch 完成：flavor=$flavor（对应 build-number=$build），version-name 不变');
+  stdout.writeln(
+    'patch 完成：flavor=$flavor（对应 build-number=$build），本次使用 version-name=$name（不写回 version.json）',
+  );
   summary.print(
     flavor: flavor,
     action: 'patch',
@@ -148,4 +177,3 @@ Future<void> run(List<String> args) async {
     isDryRun: isDryRun,
   );
 }
-

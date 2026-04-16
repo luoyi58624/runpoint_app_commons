@@ -2,8 +2,8 @@
   "inherit": true,
   "sit": {
     "apk-name": "my_shorebird_app",
-    "version-name": "1.0.0",
-    "build-number": 0,
+    "version-name": "1.0.2",
+    "build-number": 2,
     "apk-platform": [
       "arm64"
     ],
