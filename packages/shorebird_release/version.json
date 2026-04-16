@@ -1,0 +1,34 @@
+{
+  "inherit": true,
+  "sit": {
+    "apk-name": "my_shorebird_app",
+    "version-name": "1.0.0",
+    "build-number": -1,
+    "apk-platform": [
+      "arm64"
+    ],
+    "channels": {
+      "xiaomi": {
+        "version-id": 10000
+      }
+    }
+  },
+  "prod": {
+    "apk-name": "my_shorebird_app",
+    "version-name": "1.0.0",
+    "build-number": -1,
+    "apk-platform": [
+      "arm64",
+      "arm",
+      "x86"
+    ],
+    "channels": {
+      "xiaomi": {
+        "version-id": 10000
+      },
+      "oppo": {
+        "version-id": 20000
+      }
+    }
+  }
+}

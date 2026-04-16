@@ -6,18 +6,21 @@ import 'package:runpoint_app_commons/runpoint_app_commons.dart';
 
 import 'list_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  el.init();
+  nextTick(() {
+    AppUpdateUtil.shorebirdUpdate(el.context);
+  });
   runApp(const MyApp());
 }
-
-final _navigatorKey = GlobalKey<NavigatorState>();
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Flutter Demo', navigatorKey: _navigatorKey, home: HomePage());
+    return MaterialApp(title: 'Flutter Demo', navigatorKey: el.navigatorKey, home: HomePage());
   }
 }
 
@@ -33,20 +36,15 @@ class _HomePageState extends State<HomePage> {
   final config = Obs<Map>({});
 
   void readJson() async {
-    String jsonString = await rootBundle.loadString("assets/config.json");
+    String jsonString = await rootBundle.loadString("assets/config/channel.json");
     config.value = jsonDecode(jsonString);
+    ElLog.i(config.value);
   }
 
   @override
   void initState() {
     super.initState();
     readJson();
-    // 启动后手动触发一次更新检查（避免阻塞首帧渲染）。
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctx = _navigatorKey.currentContext;
-      if (ctx == null) return;
-      AppUpdateUtil.checkShorebirdUpdate(ctx);
-    });
   }
 
   @override
@@ -55,7 +53,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: ObsBuilder(
           builder: (context) {
-            return Text('Home - ${config.value['channel']}');
+            return Text('Home');
           },
         ),
         actionsPadding: .only(right: 8),
