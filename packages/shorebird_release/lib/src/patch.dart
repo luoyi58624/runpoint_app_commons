@@ -9,7 +9,8 @@ Future<void> run(List<String> args) async {
   final flavor = parsed.flavor;
   args = parsed.restArgs;
   final parsedPatchVersion = parsePatchVersionArgs(args);
-  final patchVersion = parsedPatchVersion.patchVersion;
+  final overrideName = parsedPatchVersion.versionName;
+  final overrideBuild = parsedPatchVersion.buildNumber;
   args = parsedPatchVersion.restArgs;
   final c = ctx();
 
@@ -21,37 +22,31 @@ Future<void> run(List<String> args) async {
   }
   final cfg = FlavorModel.fromJson(Map<String, dynamic>.from(raw));
   final currentName = cfg.versionName.trim();
-  final overrideReleaseVersion =
-      (patchVersion != null && patchVersion.contains('+')) ? patchVersion.trim() : null;
-  final overrideName =
-      overrideReleaseVersion != null ? parseReleaseVersion(overrideReleaseVersion).name : null;
-  final name = (overrideName ?? patchVersion ?? currentName).trim();
+  final name = (overrideName ?? currentName).trim();
   if (name.isEmpty) {
     stderr.writeln('version.json 中 version-name 不能为空');
     exit(1);
   }
-  if (patchVersion != null && patchVersion != currentName) {
-    stdout.writeln('patch-version: $currentName -> $patchVersion');
-  }
-  final build = cfg.buildNumber;
+  final cfgBuild = cfg.buildNumber;
+  // 规则：
+  // - 若传了 --patch-version x.y.z+xx 且 xx > version.json 的 build-number，则认为 xx 是“绝对 release code”，只发布 1 个补丁：x.y.z+xx
+  // - 否则认为 xx 是 build-number（可覆盖当前 build-number），按每个渠道 version-id+xx 计算 release-version
+  final isSinglePatch = overrideBuild != null && overrideBuild > cfgBuild;
+  final build = isSinglePatch ? overrideBuild : (overrideBuild ?? cfgBuild);
   final channels = cfg.channelVersionIds();
   if (channels.isEmpty) {
     stderr.writeln('version.json 中 channels 不能为空（至少一个渠道）');
     exit(1);
   }
-  if (overrideReleaseVersion != null && channels.length != 1) {
-    stderr.writeln(
-      '当使用完整 patch-version（x.y.z+code）时，channels 必须只有 1 个渠道（否则不同渠道的 release-version code 不同，会产生歧义）。',
-    );
-    stderr.writeln('当前 channels=${channels.keys.toList()..sort()}');
-    exit(1);
-  }
   final isDryRun = args.contains('--dry-run') || args.contains('-n');
 
   final summary = Summary();
+  const singleKey = '__single__';
+  final channelsToProcess = isSinglePatch ? <String, int>{singleKey: 0} : channels;
+  final total = channelsToProcess.length;
 
   final progressKey = 'patch-progress';
-  final expectedProgressId = overrideReleaseVersion ?? '$name+$build';
+  final expectedProgressId = '$name+$build';
   final tempRoot = readJsonFile(c.versionTempJson);
   final tempSec = getOrCreateFlavorSection(tempRoot, flavor);
   final progress = (tempSec[progressKey] is Map)
@@ -64,10 +59,11 @@ Future<void> run(List<String> args) async {
       ...(progress!['completed-channels'] as List).map((e) => e.toString()),
   };
 
-  for (final entry in channels.entries) {
+  for (final entry in channelsToProcess.entries) {
     final ch = entry.key;
     final base = entry.value;
-    final releaseVersion = overrideReleaseVersion ?? '$name+${base + build}';
+    final releaseVersion =
+        isSinglePatch ? '$name+$build' : '$name+${base + build}';
 
     if (!isDryRun && completed.contains(ch)) {
       stdout.writeln('已完成，跳过: channel=$ch release-version=$releaseVersion');
@@ -76,7 +72,7 @@ Future<void> run(List<String> args) async {
     }
 
     stdout.writeln(
-      '---- patch channel=$ch release-version=$releaseVersion ----',
+      '---- patch channel=${isSinglePatch ? "(single)" : ch} release-version=$releaseVersion ----',
     );
     final patchArgs = <String>[
       'patch',
@@ -85,8 +81,10 @@ Future<void> run(List<String> args) async {
       flavor,
       '--release-version',
       releaseVersion,
-      '--dart-define',
-      'channel=$ch',
+      if (!isSinglePatch) ...[
+        '--dart-define',
+        'channel=$ch',
+      ],
       if (isDryRun) '--dry-run',
       '--',
       '--no-tree-shake-icons',
@@ -101,6 +99,19 @@ Future<void> run(List<String> args) async {
     final codeExit = result.exitCode;
 
     if (codeExit != 0) {
+      final lower = result.output.toLowerCase();
+      final missingRemoteTarget = lower.contains('release not found:') ||
+          lower.contains('patches can only be published for existing releases.') ||
+          lower.contains('channel not found') ||
+          lower.contains('no channel') ||
+          lower.contains('could not find channel');
+      if (missingRemoteTarget) {
+        stderr.writeln(
+          '远程未找到目标渠道/版本，跳过继续: channel=$ch release-version=$releaseVersion exit=$codeExit',
+        );
+        summary.skipped++;
+        continue;
+      }
       if (result.output.contains('UnpatchableChangeException') ||
           result.output.contains('Your app contains asset changes')) {
         stderr.writeln('');
@@ -126,7 +137,7 @@ Future<void> run(List<String> args) async {
       summary.print(
         flavor: flavor,
         action: 'patch',
-        total: channels.length,
+        total: total,
         isDryRun: isDryRun,
       );
       exit(codeExit);
@@ -154,7 +165,7 @@ Future<void> run(List<String> args) async {
     summary.print(
       flavor: flavor,
       action: 'patch',
-      total: channels.length,
+      total: total,
       isDryRun: isDryRun,
     );
     return;
@@ -168,12 +179,12 @@ Future<void> run(List<String> args) async {
   writeJsonFile(c.versionTempJson, tempRoot2);
 
   stdout.writeln(
-    'patch 完成：flavor=$flavor（对应 build-number=$build），本次使用 version-name=$name（不写回 version.json）',
+    'patch 完成：flavor=$flavor（本次使用 build-number=$build，version-name=$name；不写回 version.json）',
   );
   summary.print(
     flavor: flavor,
     action: 'patch',
-    total: channels.length,
+    total: total,
     isDryRun: isDryRun,
   );
 }
