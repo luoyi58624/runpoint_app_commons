@@ -12,10 +12,7 @@ dependencies:
     sdk: flutter
   el_dart: ^0.0.10
   el_flutter: ^0.0.6
-  el_ui:
-    git:
-      url: https://github.com/luoyi58624/el
-      path: packages/el_ui
+  el_ui: ^0.0.3
   flutter_exit_plugin: ^0.0.1
   package_info_plus: ^9.0.0
   shorebird_code_push: ^2.0.5

@@ -30,20 +30,10 @@ Future<void> run(List<String> args) async {
     stderr.writeln('version.json 中 version-name 不能为空');
     exit(1);
   }
-  if (patchVersion != null && patchVersion != currentName) {
-    stdout.writeln('patch-version: $currentName -> $patchVersion');
-  }
   final build = cfg.buildNumber;
   final channels = cfg.channelVersionIds();
   if (channels.isEmpty) {
     stderr.writeln('version.json 中 channels 不能为空（至少一个渠道）');
-    exit(1);
-  }
-  if (overrideReleaseVersion != null && channels.length != 1) {
-    stderr.writeln(
-      '当使用完整 patch-version（x.y.z+code）时，channels 必须只有 1 个渠道（否则不同渠道的 release-version code 不同，会产生歧义）。',
-    );
-    stderr.writeln('当前 channels=${channels.keys.toList()..sort()}');
     exit(1);
   }
   final isDryRun = args.contains('--dry-run') || args.contains('-n');
@@ -101,6 +91,19 @@ Future<void> run(List<String> args) async {
     final codeExit = result.exitCode;
 
     if (codeExit != 0) {
+      final lower = result.output.toLowerCase();
+      final missingRemoteTarget = lower.contains('release not found:') ||
+          lower.contains('patches can only be published for existing releases.') ||
+          lower.contains('channel not found') ||
+          lower.contains('no channel') ||
+          lower.contains('could not find channel');
+      if (missingRemoteTarget) {
+        stderr.writeln(
+          '远程未找到目标渠道/版本，跳过继续: channel=$ch release-version=$releaseVersion exit=$codeExit',
+        );
+        summary.skipped++;
+        continue;
+      }
       if (result.output.contains('UnpatchableChangeException') ||
           result.output.contains('Your app contains asset changes')) {
         stderr.writeln('');
