@@ -8,7 +8,7 @@ class AppUpdateUtil {
   AppUpdateUtil._();
 
   /// 从服务端下载 apk 进行整包更新
-  static Future<void> apkUpdate(BuildContext context, {required String downloadUrl, bool force = false}) async =>
+  static Future<bool> apkUpdate(BuildContext context, {required String downloadUrl, bool force = false}) async =>
       $apkUpdate(context, downloadUrl, force);
 
   /// 安装 shorebird 热更新补丁

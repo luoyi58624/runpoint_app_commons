@@ -20,9 +20,15 @@ import 'src/release.dart' as impl_release;
 /// * dart run ./scripts/release.dart --action=release --flavor=prod                 // 发布 prod 环境的所有渠道包
 /// * dart run ./scripts/release.dart --action=patch --flavor=prod                   // 发布 prod 环境的所有补丁
 ///
-/// 提示：若要对之前发布的版本打补丁，可以使用 --patch-version 参数：
-/// * dart run ./scripts/release.dart --action=patch --flavor=sit --patch-version 1.0.1+1     // 发布所有渠道补丁
-/// * dart run ./scripts/release.dart --action=patch --flavor=sit --patch-version 1.0.1+1001  // 发布目标渠道补丁
+/// 提示：若要指定目标版本（release/patch 都支持），使用 --target-version <x.y.z+xx>：
+/// - 当 xx <= version.json 的 build-number：对所有渠道发布，实际 build-number = version-id + xx
+/// - 当 xx >  version.json 的 build-number：只发布一次，直接使用 build-number=xx（不再按渠道计算）
+///
+/// 示例：
+/// * dart run ./scripts/release.dart --action=patch --flavor=sit --target-version 1.0.1+1      // 发布所有渠道补丁
+/// * dart run ./scripts/release.dart --action=patch --flavor=sit --target-version 1.0.1+1001   // 只发布一次补丁（绝对版本号）
+/// * dart run ./scripts/release.dart --action=release --flavor=sit --target-version 1.0.1+1    // 发布所有渠道 release
+/// * dart run ./scripts/release.dart --action=release --flavor=sit --target-version 1.0.1+1001 // 只发布一次 release（绝对版本号）
 Future<void> runShorebirdRelease(List<String> args) async {
   String? action;
   final rest = <String>[];
@@ -37,7 +43,9 @@ Future<void> runShorebirdRelease(List<String> args) async {
   }
 
   if (action != 'release' && action != 'patch') {
-    stderr.writeln('用法: dart run ./scripts/run.dart --action=<release|patch> --flavor=<sit|prod> [args...]');
+    stderr.writeln(
+      '用法: dart run ./scripts/run.dart --action=<release|patch> --flavor=<sit|prod> [args...]',
+    );
     exit(1);
   }
 
