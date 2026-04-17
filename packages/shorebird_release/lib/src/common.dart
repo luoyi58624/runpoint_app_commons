@@ -25,73 +25,127 @@ String? _shorebirdExecutable;
   return (flavor: out, restArgs: rest);
 }
 
-({String? versionName, int? buildNumber, List<String> restArgs})
-    parseTargetVersionArgs(List<String> args) {
-  String? value;
-  var usedDeprecatedPatchVersion = false;
+/// 解析 `--target-version x.y.z+xx`（用于对齐远程 release 版本）以及可选的 `--version-id`。
+({String? versionName, int? buildSegment, int? versionId, List<String> restArgs})
+    parseRemoteReleaseArgs(List<String> args) {
+  String? targetRaw;
+  int? versionId;
   final rest = <String>[];
+
+  int? parseNonNegInt(String raw, String label) {
+    final v = int.tryParse(raw.trim());
+    if (v == null || v < 0) {
+      stderr.writeln('$label 必须为非负整数，当前为: "$raw"');
+      exit(1);
+    }
+    return v;
+  }
 
   for (var i = 0; i < args.length; i++) {
     final a = args[i];
-    if (a == '--target-version' || a == '--patch-version') {
-      if (a == '--patch-version') usedDeprecatedPatchVersion = true;
+    if (a == '--target-version') {
       final next = (i + 1) < args.length ? args[i + 1] : null;
       if (next == null || next.trim().isEmpty) {
         stderr.writeln(
-          '用法: --target-version <x.y.z+xx>，例如 --target-version 1.0.2+9 或 --target-version 1.0.1+1001',
+          '用法: --target-version <x.y.z+xx>，例如 --target-version 1.0.2+9',
         );
         exit(1);
       }
-      value = next.trim();
-      i++; // consume next
+      targetRaw = next.trim();
+      i++;
       continue;
     }
     if (a.startsWith('--target-version=')) {
-      value = a.substring('--target-version='.length).trim();
+      final raw = a.substring('--target-version='.length);
+      if (raw.trim().isEmpty) {
+        stderr.writeln('用法: --target-version=<x.y.z+xx>');
+        exit(1);
+      }
+      targetRaw = raw.trim();
       continue;
     }
-    if (a.startsWith('--patch-version=')) {
-      usedDeprecatedPatchVersion = true;
-      value = a.substring('--patch-version='.length).trim();
+    if (a == '--version-id') {
+      final next = (i + 1) < args.length ? args[i + 1] : null;
+      if (next == null || next.trim().isEmpty) {
+        stderr.writeln('用法: --version-id <非负整数>（须与 --target-version 同时使用）');
+        exit(1);
+      }
+      versionId = parseNonNegInt(next, '--version-id');
+      i++;
+      continue;
+    }
+    if (a.startsWith('--version-id=')) {
+      final raw = a.substring('--version-id='.length);
+      if (raw.trim().isEmpty) {
+        stderr.writeln('用法: --version-id=<非负整数>（须与 --target-version 同时使用）');
+        exit(1);
+      }
+      versionId = parseNonNegInt(raw, '--version-id');
       continue;
     }
     rest.add(a);
   }
 
-  if (usedDeprecatedPatchVersion) {
-    stderr.writeln('提示：参数 --patch-version 已废弃，请改用 --target-version');
+  if (targetRaw == null || targetRaw.isEmpty) {
+    return (versionName: null, buildSegment: null, versionId: versionId, restArgs: rest);
   }
 
-  final out = value?.trim();
-  if (out == null || out.isEmpty) {
-    return (versionName: null, buildNumber: null, restArgs: rest);
-  }
-  // 必须为：x.y.z+xx
-  // - 若 xx <= version.json 的 build-number：视为 build-number 覆盖值，最终每个渠道按 version-id+xx 计算 release-version
-  // - 若 xx > version.json 的 build-number：视为“绝对 release code”，将只执行一次发布，release-version=x.y.z+xx
-  final plus = out.indexOf('+');
+  final plus = targetRaw.indexOf('+');
   if (plus < 0) {
     stderr.writeln(
-      'target-version 必须是 x.y.z+xx，例如 --target-version 1.0.2+9；当前为: "$out"',
+      '--target-version 必须是 x.y.z+xx，例如 1.0.2+9；当前为: "$targetRaw"',
     );
     exit(1);
   }
-  final name = out.substring(0, plus).trim();
-  final buildRaw = out.substring(plus + 1).trim();
+  final name = targetRaw.substring(0, plus).trim();
+  final xxRaw = targetRaw.substring(plus + 1).trim();
   parseSemver3(name);
-  final build = int.tryParse(buildRaw);
-  if (build == null || build < 0) {
-    stderr.writeln('target-version 的 +build-number 必须为非负整数，当前为: "$out"');
+  final xx = int.tryParse(xxRaw);
+  if (xx == null || xx < 0) {
+    stderr.writeln(
+      '--target-version 中 + 后面的 xx 必须为非负整数；当前为: "$targetRaw"',
+    );
     exit(1);
   }
-  return (versionName: name, buildNumber: build, restArgs: rest);
+  return (versionName: name, buildSegment: xx, versionId: versionId, restArgs: rest);
 }
 
-@Deprecated('Use parseTargetVersionArgs')
-({String? versionName, int? buildNumber, List<String> restArgs}) parsePatchVersionArgs(
-  List<String> args,
-) =>
-    parseTargetVersionArgs(args);
+/// 仅 [versionId] 匹配唯一渠道时返回该渠道的 `{渠道名: version-id}`。
+Map<String, int> resolveChannelsByVersionId(Map<String, int> channels, int versionId) {
+  final matches = channels.entries.where((e) => e.value == versionId).toList();
+  if (matches.isEmpty) {
+    stderr.writeln('未找到与 version-id=$versionId 匹配的渠道（请检查 version.json 中 channels 配置）');
+    exit(1);
+  }
+  if (matches.length > 1) {
+    stderr.writeln(
+      'version-id=$versionId 匹配到多个渠道: ${matches.map((e) => e.key).join(", ")}，请保证各渠道 version-id 唯一',
+    );
+    exit(1);
+  }
+  final e = matches.single;
+  return {e.key: e.value};
+}
+
+/// `--target-version` 中 `+xx` 的 `xx` 不得大于 [jsonBuildNumber]（不允许发尚未记录在 version.json 的更高版本）。
+void validateTargetVersionSegmentAgainstJson({
+  required int? segmentXx,
+  required int jsonBuildNumber,
+}) {
+  if (segmentXx == null) return;
+  if (jsonBuildNumber < 0) {
+    stderr.writeln(
+      '当前 flavor 的 build-number 为 $jsonBuildNumber（尚未完成有效 release），不支持使用 --target-version，请先执行一次正常 release',
+    );
+    exit(1);
+  }
+  if (segmentXx > jsonBuildNumber) {
+    stderr.writeln(
+      '--target-version 中的 xx（$segmentXx）不能大于 version.json 中的 build-number（$jsonBuildNumber）；不允许发布尚未发版的版本',
+    );
+    exit(1);
+  }
+}
 
 ({String name, int code}) parseReleaseVersion(String releaseVersion) {
   final raw = releaseVersion.trim();

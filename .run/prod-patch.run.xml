@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="prod-patch" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
+    <option name="arguments" value="--action=patch --flavor=prod" />
+    <option name="filePath" value="$PROJECT_DIR$/examples/my_shorebird_app/scripts/release.dart" />
+    <option name="workingDirectory" value="$PROJECT_DIR$/examples/my_shorebird_app" />
+    <method v="2" />
+  </configuration>
+</component>

@@ -8,10 +8,17 @@ Future<void> run(List<String> args) async {
   final parsed = parseFlavorArgs(args);
   final flavor = parsed.flavor;
   args = parsed.restArgs;
-  final parsedTargetVersion = parseTargetVersionArgs(args);
-  final overrideName = parsedTargetVersion.versionName;
-  final overrideBuild = parsedTargetVersion.buildNumber;
-  args = parsedTargetVersion.restArgs;
+  final parsedRemote = parseRemoteReleaseArgs(args);
+  final overrideName = parsedRemote.versionName;
+  final xx = parsedRemote.buildSegment;
+  final userVersionId = parsedRemote.versionId;
+  args = parsedRemote.restArgs;
+
+  if (userVersionId != null && (overrideName == null || xx == null)) {
+    stderr.writeln('指定了 --version-id 时必须同时指定 --target-version <x.y.z+xx>');
+    exit(1);
+  }
+
   final c = ctx();
 
   final root = readJsonFile(c.versionJson);
@@ -44,26 +51,23 @@ Future<void> run(List<String> args) async {
   final isDryRun = args.contains('--dry-run') || args.contains('-n');
 
   final beforeBuild = cfg.buildNumber;
-  final hasTargetVersion = overrideName != null && overrideBuild != null;
+  final hasOverride = overrideName != null && xx != null;
 
   late final int build;
   late final String name;
-  late final bool isSingleRelease;
+  late final Map<String, int> channelsToProcess;
 
-  if (hasTargetVersion) {
-    // 规则（与 patch 一致）：
-    // - 若传了 --target-version x.y.z+xx 且 xx > version.json 的 build-number，则认为 xx 是“绝对 release code”，只执行一次：build-number=xx
-    // - 否则认为 xx 是 build-number（可覆盖当前 build-number），按每个渠道 version-id+xx 计算 build-number
-    isSingleRelease = overrideBuild > beforeBuild;
-    build = overrideBuild;
+  if (hasOverride) {
+    validateTargetVersionSegmentAgainstJson(
+      segmentXx: xx,
+      jsonBuildNumber: beforeBuild,
+    );
+    build = xx;
     name = overrideName.trim();
-    if (name.isEmpty) {
-      stderr.writeln('version.json 中 version-name 不能为空');
-      exit(1);
-    }
+    channelsToProcess = userVersionId == null
+        ? channels
+        : resolveChannelsByVersionId(channels, userVersionId);
   } else {
-    // 正常递增：不写 --target-version 时由脚本自动 bump，结束后写回 version.json
-    isSingleRelease = false;
     final isFirst = beforeBuild == -1;
     build = beforeBuild + 1;
     name = (isFirst ? currentName : bumpPatch(currentName)).trim();
@@ -71,10 +75,11 @@ Future<void> run(List<String> args) async {
       stderr.writeln('version.json 中 version-name 不能为空');
       exit(1);
     }
+    channelsToProcess = channels;
   }
 
   stdout.writeln(
-    'release: flavor=$flavor; version-name $currentName -> $name, build-number $beforeBuild -> $build${hasTargetVersion ? "（--target-version，不写回 version.json）" : ""}',
+    'release: flavor=$flavor; version-name $currentName -> $name, build-number $beforeBuild -> $build${hasOverride ? "（--target-version，不写回 version.json）" : ""}',
   );
 
   final summary = Summary();
@@ -90,14 +95,12 @@ Future<void> run(List<String> args) async {
       ...(progress!['completed-channels'] as List).map((e) => e.toString()),
   };
 
-  const singleKey = '__single__';
-  final channelsToProcess = isSingleRelease ? <String, int>{singleKey: 0} : channels;
   final total = channelsToProcess.length;
 
   for (final entry in channelsToProcess.entries) {
     final ch = entry.key;
     final base = entry.value;
-    final code = isSingleRelease ? build : (base + build);
+    final code = base + build;
     final releaseVersion = '$name+$code';
     final plannedOutApk = '$flavor/$ch/$appName.apk';
 
@@ -107,9 +110,7 @@ Future<void> run(List<String> args) async {
       continue;
     }
 
-    stdout.writeln(
-      '---- channel=${isSingleRelease ? "(single)" : ch} build-number=$code ----',
-    );
+    stdout.writeln('---- channel=$ch build-number=$code ----');
     final releaseArgs = <String>[
       'release',
       'android',
@@ -125,10 +126,8 @@ Future<void> run(List<String> args) async {
         '--target-platform',
         apkTargetPlatforms.join(','),
       ],
-      if (!isSingleRelease) ...[
-        '--dart-define',
-        'channel=$ch',
-      ],
+      '--dart-define',
+      'channel=$ch',
       if (isDryRun) '--dry-run',
       '--',
       '--no-tree-shake-icons',
@@ -243,26 +242,7 @@ Future<void> run(List<String> args) async {
     return;
   }
 
-  if (isSingleRelease) {
-    final tempRootSingle = readJsonFile(c.versionTempJson);
-    final tempSecSingle = getOrCreateFlavorSection(tempRootSingle, flavor);
-    tempSecSingle.remove(progressKey);
-    tempRootSingle[flavor] = tempSecSingle;
-    writeJsonFile(c.versionTempJson, tempRootSingle);
-
-    stdout.writeln(
-      'release 完成（single）：flavor=$flavor（本次使用 build-number=$build，version-name=$name；不写回 version.json）',
-    );
-    summary.print(
-      flavor: flavor,
-      action: 'release',
-      total: total,
-      isDryRun: isDryRun,
-    );
-    return;
-  }
-
-  if (hasTargetVersion) {
+  if (hasOverride) {
     final tempRoot3 = readJsonFile(c.versionTempJson);
     final tempSec3 = getOrCreateFlavorSection(tempRoot3, flavor);
     tempSec3.remove(progressKey);
@@ -270,7 +250,7 @@ Future<void> run(List<String> args) async {
     writeJsonFile(c.versionTempJson, tempRoot3);
 
     stdout.writeln(
-      'release 完成（--target-version）：flavor=$flavor（本次 version-name=$name build-number=$build；不写回 version.json）',
+      'release 完成（--target-version）：flavor=$flavor（version-name=$name segment=$build；不写回 version.json）',
     );
     summary.print(
       flavor: flavor,
@@ -281,7 +261,7 @@ Future<void> run(List<String> args) async {
     return;
   }
 
-  // 写回：只更新 flavor 节点的 build-number/version-name（仅正常递增、未传 --target-version）
+  // 写回：只更新 flavor 节点的 build-number/version-name（仅正常递增）
   final updated = FlavorModel(
     apkName: cfg.apkName,
     versionName: name,
