@@ -19,10 +19,21 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.1
   android_package_installer: ^0.0.3
+  get_storage: ^2.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+dependency_overrides:
+  el_dart:
+    path: ../../project/my-project/el/packages/el_dart
+  el_flutter:
+    path: ../../project/my-project/el/packages/el_flutter
+  el_ui:
+    path: ../../project/my-project/el/packages/el_ui
+  el_http:
+    path: ../../project/my-project/el/packages/el_http
 
 flutter:
