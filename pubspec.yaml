@@ -26,14 +26,14 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-dependency_overrides:
-  el_dart:
-    path: ../../project/my-project/el/packages/el_dart
-  el_flutter:
-    path: ../../project/my-project/el/packages/el_flutter
-  el_ui:
-    path: ../../project/my-project/el/packages/el_ui
-  el_http:
-    path: ../../project/my-project/el/packages/el_http
+#dependency_overrides:
+#  el_dart:
+#    path: ../../project/my-project/el/packages/el_dart
+#  el_flutter:
+#    path: ../../project/my-project/el/packages/el_flutter
+#  el_ui:
+#    path: ../../project/my-project/el/packages/el_ui
+#  el_http:
+#    path: ../../project/my-project/el/packages/el_http
 
 flutter:

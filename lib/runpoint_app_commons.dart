@@ -15,10 +15,4 @@ export 'src/widgets/simple_widgets.dart';
 
 Future<void> init() async {
   await el.init();
-  ElLoadingUtil.defaultCloseModel = ElLoadingCloseModel(
-    title: 'Close Loading',
-    content: 'Are you sure you want to close it?',
-    cancel: 'Cancel',
-    confirm: 'Confirm',
-  );
 }
