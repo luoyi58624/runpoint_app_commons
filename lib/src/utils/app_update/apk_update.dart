@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:android_package_installer/android_package_installer.dart';
-import 'package:el_flutter/ext.dart';
+import 'package:el_dart/el_dart.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
