@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:runpoint_app_commons/runpoint_app_commons.dart';
 
 import 'app.dart';
 import 'flavors.dart';
