@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:el_dart/el_dart.dart';
 import 'package:el_flutter/el_flutter.dart';
-import 'package:el_ui/el_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_exit_plugin/flutter_exit_plugin.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
@@ -56,7 +55,7 @@ Future<void> $shorebirdUpdate(
       );
     }
   } catch (e) {
-    ElLog.w((e));
+    El.w((e));
   } finally {
     _updating = false;
   }
